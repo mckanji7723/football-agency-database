@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Comparison - Football Agency Database</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        .player-select {
+            margin: 20px 0;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        .select-container {
+            width: 300px;
+        }
+        .search-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .player-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .stat-item .label {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .stat-item .value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .chart-container {
+            margin: 20px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-wrapper {
+            margin: 20px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Player Comparison</h1>
+            <p>Compare player statistics and attributes</p>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            Loading player data... Please wait...
+        </div>
+
+        <div class="player-select">
+            <div class="select-container">
+                <label for="player1">Select First Player:</label>
+                <select id="player1" class="player-selector"></select>
+                <div class="search-info">Type to search for a player</div>
+            </div>
+            <div class="select-container">
+                <label for="player2">Select Second Player:</label>
+                <select id="player2" class="player-selector"></select>
+                <div class="search-info">Type to search for a player</div>
+            </div>
+        </div>
+
+        <div class="player-info">
+            <div class="player-card" id="player1Info">
+                <h3>Select a player to compare</h3>
+            </div>
+            <div class="player-card" id="player2Info">
+                <h3>Select a player to compare</h3>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-wrapper">
+                <h3>Performance Metrics</h3>
+                <canvas id="performanceChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Goal Contributions</h3>
+                <canvas id="goalsChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Defensive Actions</h3>
+                <canvas id="defenseChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Passing Accuracy</h3>
+                <canvas id="passingChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let playerData = [];
+        let charts = {};
+
+        // Initialize Select2
+        $(document).ready(function() {
+            $('.player-selector').select2({
+                placeholder: 'Search for a player...',
+                allowClear: true,
+                width: '100%'
+            }).on('change', updateComparison);
+        });
+
+        // Load and parse CSV data
+        function loadData() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('loadingIndicator').innerHTML = 'Loading player data... Please wait...';
+            
+            fetch('og.csv')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    if (!csvText || csvText.trim() === '') {
+                        throw new Error('CSV file is empty');
+                    }
+                    
+                    Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            if (!results.data || results.data.length === 0) {
+                                throw new Error('No data found in CSV file');
+                            }
+                            
+                            // Filter out any empty or invalid entries
+                            playerData = results.data.filter(player => {
+                                return player && 
+                                       player.name && 
+                                       player.name.trim() !== '' &&
+                                       player.Age &&
+                                       player['Team & Contract'];
+                            });
+                            
+                            if (playerData.length === 0) {
+                                throw new Error('No valid player entries found in CSV file');
+                            }
+                            
+                            console.log('Loaded players:', playerData.length);
+                            populatePlayerDropdowns();
+                            document.getElementById('loadingIndicator').style.display = 'none';
+                        },
+                        error: function(error) {
+                            throw new Error(`Error parsing CSV: ${error.message}`);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loadingIndicator').innerHTML = `
+                        <div style="color: red;">
+                            <h3>Error Loading Data</h3>
+                            <p>${error.message}</p>
+                            <p>Please ensure:</p>
+                            <ul>
+                                <li>The og.csv file exists in the same directory as compare.html</li>
+                                <li>The CSV file is properly formatted with headers</li>
+                                <li>The CSV file contains valid player data</li>
+                            </ul>
+                        </div>
+                    `;
+                });
+        }
+
+        // Populate player dropdowns with Select2
+        function populatePlayerDropdowns() {
+            try {
+                const options = playerData.map(player => ({
+                    id: player.name,
+                    text: `${player.name} (${player['Team & Contract'] || 'No Team'})`
+                }));
+
+                if (options.length === 0) {
+                    throw new Error('No players found in the data');
+                }
+
+                $('#player1, #player2').empty().select2({
+                    data: options,
+                    placeholder: 'Search for a player...',
+                    allowClear: true,
+                    minimumInputLength: 1,
+                    width: '100%'
+                });
+
+                console.log('Dropdowns populated with options:', options.length);
+            } catch (error) {
+                console.error('Error populating dropdowns:', error);
+                document.getElementById('loadingIndicator').innerHTML = `
+                    <div style="color: red;">
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Update comparison when players are selected
+        function updateComparison() {
+            const player1Name = $('#player1').val();
+            const player2Name = $('#player2').val();
+
+            console.log('Selected players:', player1Name, player2Name);
+
+            const player1 = playerData.find(p => p.name === player1Name);
+            const player2 = playerData.find(p => p.name === player2Name);
+
+            if (player1 && player2) {
+                console.log('Found players:', player1.name, player2.name);
+                updatePlayerInfo(player1, player2);
+                updateCharts(player1, player2);
+            } else {
+                console.log('Players not found');
+            }
+        }
+
+        // Function to calculate market value based on age and performance
+        function calculateMarketValue(player) {
+            // Base value from performance metrics
+            const baseValue = (
+                parseInt(player['Pace / Diving']) +
+                parseInt(player['Shooting / Handling']) +
+                parseInt(player['Passing / Kicking']) +
+                parseInt(player['Dribbling / Reflexes']) +
+                parseInt(player['Defending / Pace'])
+            ) / 5;
+
+            // Age factor (peaks around 27-28)
+            const age = parseInt(player.Age);
+            let ageFactor = 1;
+            if (age < 20) ageFactor = 0.7;
+            else if (age < 23) ageFactor = 0.85;
+            else if (age < 27) ageFactor = 1.0;
+            else if (age < 30) ageFactor = 0.9;
+            else if (age < 33) ageFactor = 0.7;
+            else ageFactor = 0.5;
+
+            // Calculate final value in millions
+            const marketValue = (baseValue * ageFactor * 0.5).toFixed(1);
+            return marketValue;
+        }
+
+        // Update player information cards
+        function updatePlayerInfo(player1, player2) {
+            const player1Value = calculateMarketValue(player1);
+            const player2Value = calculateMarketValue(player2);
+
+            document.getElementById('player1Info').innerHTML = `
+                <h3>${player1.name}</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="label">Age</div>
+                        <div class="value" id="player1Age">${player1.Age}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Position</div>
+                        <div class="value" id="player1Position">${player1['Best position']}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Market Value</div>
+                        <div class="value" id="player1Value">€${player1Value}M</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Team</div>
+                        <div class="value" id="player1Team">${player1['Team & Contract']}</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('player2Info').innerHTML = `
+                <h3>${player2.name}</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="label">Age</div>
+                        <div class="value" id="player2Age">${player2.Age}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Position</div>
+                        <div class="value" id="player2Position">${player2['Best position']}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Market Value</div>
+                        <div class="value" id="player2Value">€${player2Value}M</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Team</div>
+                        <div class="value" id="player2Team">${player2['Team & Contract']}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update all charts
+        function updateCharts(player1, player2) {
+            updatePerformanceChart(player1, player2);
+            updateGoalsChart(player1, player2);
+            updateDefenseChart(player1, player2);
+            updatePassingChart(player1, player2);
+        }
+
+        // Create performance comparison chart
+        function updatePerformanceChart(player1, player2) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            if (charts.performance) charts.performance.destroy();
+            
+            charts.performance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Pace', 'Shooting', 'Passing', 'Dribbling', 'Defending'],
+                    datasets: [{
+                        label: player1.name,
+                        data: [
+                            parseInt(player1['Pace / Diving']),
+                            parseInt(player1['Shooting / Handling']),
+                            parseInt(player1['Passing / Kicking']),
+                            parseInt(player1['Dribbling / Reflexes']),
+                            parseInt(player1['Defending / Pace'])
+                        ],
+                        backgroundColor: 'rgba(33, 150, 243, 0.2)',
+                        borderColor: 'rgba(33, 150, 243, 1)',
+                        borderWidth: 2
+                    }, {
+                        label: player2.name,
+                        data: [
+                            parseInt(player2['Pace / Diving']),
+                            parseInt(player2['Shooting / Handling']),
+                            parseInt(player2['Passing / Kicking']),
+                            parseInt(player2['Dribbling / Reflexes']),
+                            parseInt(player2['Defending / Pace'])
+                        ],
+                        backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                        borderColor: 'rgba(255, 152, 0, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create goals comparison chart
+        function updateGoalsChart(player1, player2) {
+            const ctx = document.getElementById('goalsChart').getContext('2d');
+            
+            if (charts.goals) charts.goals.destroy();
+            
+            charts.goals = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Goals', 'Assists', 'Shots'],
+                    datasets: [{
+                        label: player1.name,
+                        data: [12, 8, 45],
+                        backgroundColor: 'rgba(33, 150, 243, 0.5)'
+                    }, {
+                        label: player2.name,
+                        data: [15, 6, 50],
+                        backgroundColor: 'rgba(255, 152, 0, 0.5)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create defensive actions chart
+        function updateDefenseChart(player1, player2) {
+            const ctx = document.getElementById('defenseChart').getContext('2d');
+            
+            if (charts.defense) charts.defense.destroy();
+            
+            charts.defense = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tackles', 'Interceptions', 'Clearances'],
+                    datasets: [{
+                        label: player1.name,
+                        data: [25, 15, 30],
+                        backgroundColor: 'rgba(33, 150, 243, 0.5)'
+                    }, {
+                        label: player2.name,
+                        data: [20, 18, 25],
+                        backgroundColor: 'rgba(255, 152, 0, 0.5)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create passing accuracy chart
+        function updatePassingChart(player1, player2) {
+            const ctx = document.getElementById('passingChart').getContext('2d');
+            
+            if (charts.passing) charts.passing.destroy();
+            
+            charts.passing = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Failed'],
+                    datasets: [{
+                        label: player1.name,
+                        data: [85, 15],
+                        backgroundColor: ['rgba(33, 150, 243, 0.5)', 'rgba(255, 152, 0, 0.5)']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: player1.name + ' Passing Accuracy'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+    </script>
+</body>
+</html> 

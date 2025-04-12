@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Agency Database</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .w-input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .w-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        .w-button:hover {
+            background-color: #45a049;
+        }
+        .search-button {
+            background-color: #2196F3;
+        }
+        .search-button:hover {
+            background-color: #0b7dda;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #loadingIndicator {
+            text-align: center;
+            padding: 20px;
+            display: none;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        #paginationControls {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            background-color: #ffebee;
+            border-radius: 4px;
+        }
+        .search-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-form select {
+            flex: 1;
+        }
+        .search-form input {
+            flex: 2;
+        }
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff3cd;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .search-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        #dataContainer {
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body>
+        <div class="container">
+        <h1>Football Agency Database Management</h1>
+        
+        <div id="loadingIndicator">
+            Loading data... Please wait...
+        </div>
+                
+        <div class="search-section">
+            <form class="search-form" onsubmit="searchPlayer(); return false;">
+                    <select id="searchFilter" class="w-input">
+                        <option value="Name">Name</option>
+                        <option value="Age">Age</option>
+                    <option value="Team & Contract">Team & Contract</option>
+                        <option value="ID">ID</option>
+                        <option value="Best position">Best Position</option>
+                        <option value="Market value in €">Market Value</option>
+                        <option value="Height">Height</option>
+                        <option value="Foot">Foot</option>
+                        <option value="Nationality">Nationality</option>
+                    </select>
+                <input class="w-input" id="search" maxlength="256" placeholder="Enter Search Term" type="text" />
+                <button id="searchButton" class="search-button w-button">Search</button>
+            </form>
+            <div class="search-info">
+                Search through the database by selecting a category and entering your search term
+            </div>
+        </div>
+            
+        <div class="insert-section">
+            <h2>Add New Player</h2>
+            <div class="input-grid">
+                <input id="insertName" placeholder="Name" class="w-input" />
+                <input id="insertAge" placeholder="Age" class="w-input" />
+                <input id="insertTeam" placeholder="Team & Contract" class="w-input" />
+                <input id="insertID" placeholder="ID" class="w-input" />
+                <input id="insertPosition" placeholder="Best position" class="w-input" />
+                <input id="insertMarketValue" placeholder="Market value in €" class="w-input" />
+                <input id="insertHeight" placeholder="Height" class="w-input" />
+                <input id="insertFoot" placeholder="Foot" class="w-input" />
+                <input id="insertNationality" placeholder="Nationality" class="w-input" />
+                <button class="w-button" onclick="insertRow()">Insert</button>
+            </div>
+              </div>
+              
+        <div id="paginationControls">
+            <button id="prevPage" class="w-button">Previous</button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button id="nextPage" class="w-button">Next</button>
+        </div>
+        
+        <div id="dataContainer" class="container-2">
+            <!-- Table will be inserted here -->
+        </div>
+    </div>
+
+        <script src="data.js"></script>
+    <script>
+        let playerData = [];
+        let currentUserRole = '';
+
+        // Check if user is logged in
+        window.onload = function() {
+            if (!sessionStorage.getItem('isLoggedIn')) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUserRole = sessionStorage.getItem('userRole');
+            console.log('Current user role:', currentUserRole);
+            
+            // Initialize UI based on role
+            initializeUI();
+            
+            // Load CSV data
+            loadCSV();
+        };
+
+        function initializeUI() {
+            // Get all admin-related elements
+            const adminControls = document.getElementById('adminControls');
+            const addPlayerBtn = document.getElementById('addPlayerBtn');
+            const updatePlayerBtn = document.getElementById('updatePlayerBtn');
+            const deletePlayerBtn = document.getElementById('deletePlayerBtn');
+            const playerForm = document.getElementById('playerForm');
+            
+            // Hide all admin controls by default
+            if (adminControls) adminControls.style.display = 'none';
+            if (addPlayerBtn) addPlayerBtn.style.display = 'none';
+            if (updatePlayerBtn) updatePlayerBtn.style.display = 'none';
+            if (deletePlayerBtn) deletePlayerBtn.style.display = 'none';
+            if (playerForm) playerForm.style.display = 'none';
+
+            // Show admin controls only for admin role
+            if (currentUserRole === 'admin') {
+                if (adminControls) adminControls.style.display = 'block';
+                if (addPlayerBtn) addPlayerBtn.style.display = 'inline-block';
+                if (updatePlayerBtn) updatePlayerBtn.style.display = 'inline-block';
+                if (deletePlayerBtn) deletePlayerBtn.style.display = 'inline-block';
+            }
+
+            // Update welcome message
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            if (welcomeMessage) {
+                welcomeMessage.textContent = `Welcome, ${currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1)}!`;
+            }
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // Load and parse CSV data
+        function loadCSV() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('loadingIndicator').innerHTML = 'Loading player data... Please wait...';
+            
+            fetch('og.csv')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    if (!csvText || csvText.trim() === '') {
+                        throw new Error('CSV file is empty');
+                    }
+                    
+                    Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            if (!results.data || results.data.length === 0) {
+                                throw new Error('No data found in CSV file');
+                            }
+                            
+                            // Filter out any empty or invalid entries
+                            playerData = results.data.filter(player => {
+                                return player && 
+                                       player.name && 
+                                       player.name.trim() !== '' &&
+                                       player.Age &&
+                                       player['Team & Contract'];
+                            });
+                            
+                            if (playerData.length === 0) {
+                                throw new Error('No valid player entries found in CSV file');
+                            }
+                            
+                            console.log('Loaded players:', playerData.length);
+                            displayPlayers();
+                            document.getElementById('loadingIndicator').style.display = 'none';
+                        },
+                        error: function(error) {
+                            throw new Error(`Error parsing CSV: ${error.message}`);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loadingIndicator').innerHTML = `
+                        <div style="color: red;">
+                            <h3>Error Loading Data</h3>
+                            <p>${error.message}</p>
+                            <p>Please ensure:</p>
+                            <ul>
+                                <li>The og.csv file exists in the same directory as services.html</li>
+                                <li>The CSV file is properly formatted with headers</li>
+                                <li>The CSV file contains valid player data</li>
+                            </ul>
+                        </div>
+                    `;
+                });
+        }
+
+        // Display players in the table
+        function displayPlayers() {
+            const tableBody = document.getElementById('playerTableBody');
+            if (!tableBody) return;
+            
+            tableBody.innerHTML = '';
+            
+            playerData.forEach(player => {
+                const row = document.createElement('tr');
+                const actionButtons = currentUserRole === 'admin' 
+                    ? `
+                        <button class="action-btn view-btn" onclick="viewPlayer('${player.name}')">View</button>
+                        <button class="action-btn edit-btn" onclick="editPlayer('${player.name}')">Edit</button>
+                        <button class="action-btn delete-btn" onclick="deletePlayer('${player.name}')">Delete</button>
+                    `
+                    : `
+                        <button class="action-btn view-btn" onclick="viewPlayer('${player.name}')">View</button>
+                    `;
+                
+                row.innerHTML = `
+                    <td>${player.name}</td>
+                    <td>${player.Age}</td>
+                    <td>${player['Team & Contract']}</td>
+                    <td>${player.Position}</td>
+                    <td>${player['Value(Euros)']}</td>
+                    <td>${actionButtons}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // View player details
+        function viewPlayer(playerName) {
+            const player = playerData.find(p => p.name === playerName);
+            if (player) {
+                const modal = document.getElementById('playerModal');
+                const modalContent = document.getElementById('playerModalContent');
+                
+                modalContent.innerHTML = `
+                    <h2>${player.name}</h2>
+                    <p><strong>Age:</strong> ${player.Age}</p>
+                    <p><strong>Team & Contract:</strong> ${player['Team & Contract']}</p>
+                    <p><strong>Position:</strong> ${player.Position}</p>
+                    <p><strong>Value:</strong> ${player['Value(Euros)']}</p>
+                    <p><strong>Nationality:</strong> ${player.Nationality}</p>
+                    <p><strong>Height:</strong> ${player.Height}</p>
+                    <p><strong>Weight:</strong> ${player.Weight}</p>
+                    <p><strong>Preferred Foot:</strong> ${player['Preferred Foot']}</p>
+                    <p><strong>Weak Foot:</strong> ${player['Weak Foot']}</p>
+                    <p><strong>Skill Moves:</strong> ${player['Skill Moves']}</p>
+                    <p><strong>Work Rate:</strong> ${player['Work Rate']}</p>
+                    <p><strong>Body Type:</strong> ${player['Body Type']}</p>
+                    <p><strong>Real Face:</strong> ${player['Real Face']}</p>
+                    <p><strong>Release Clause:</strong> ${player['Release Clause']}</p>
+                    <p><strong>Player Tags:</strong> ${player['Player Tags']}</p>
+                    <p><strong>Team Position:</strong> ${player['Team Position']}</p>
+                    <p><strong>Joined:</strong> ${player.Joined}</p>
+                    <p><strong>Contract Valid Until:</strong> ${player['Contract Valid Until']}</p>
+                    <p><strong>Nation Position:</strong> ${player['Nation Position']}</p>
+                    <p><strong>Nation Jersey Number:</strong> ${player['Nation Jersey Number']}</p>
+                    <p><strong>Pace Total:</strong> ${player['Pace Total']}</p>
+                    <p><strong>Shooting Total:</strong> ${player['Shooting Total']}</p>
+                    <p><strong>Passing Total:</strong> ${player['Passing Total']}</p>
+                    <p><strong>Dribbling Total:</strong> ${player['Dribbling Total']}</p>
+                    <p><strong>Defending Total:</strong> ${player['Defending Total']}</p>
+                    <p><strong>Physical Total:</strong> ${player['Physical Total']}</p>
+                    <p><strong>Crossing:</strong> ${player.Crossing}</p>
+                    <p><strong>Finishing:</strong> ${player.Finishing}</p>
+                    <p><strong>Heading Accuracy:</strong> ${player['Heading Accuracy']}</p>
+                    <p><strong>Short Passing:</strong> ${player['Short Passing']}</p>
+                    <p><strong>Volleys:</strong> ${player.Volleys}</p>
+                    <p><strong>Dribbling:</strong> ${player.Dribbling}</p>
+                    <p><strong>Curve:</strong> ${player.Curve}</p>
+                    <p><strong>FK Accuracy:</strong> ${player['FK Accuracy']}</p>
+                    <p><strong>Long Passing:</strong> ${player['Long Passing']}</p>
+                    <p><strong>Ball Control:</strong> ${player['Ball Control']}</p>
+                    <p><strong>Acceleration:</strong> ${player.Acceleration}</p>
+                    <p><strong>Sprint Speed:</strong> ${player['Sprint Speed']}</p>
+                    <p><strong>Agility:</strong> ${player.Agility}</p>
+                    <p><strong>Reactions:</strong> ${player.Reactions}</p>
+                    <p><strong>Balance:</strong> ${player.Balance}</p>
+                    <p><strong>Shot Power:</strong> ${player['Shot Power']}</p>
+                    <p><strong>Jumping:</strong> ${player.Jumping}</p>
+                    <p><strong>Stamina:</strong> ${player.Stamina}</p>
+                    <p><strong>Strength:</strong> ${player.Strength}</p>
+                    <p><strong>Long Shots:</strong> ${player['Long Shots']}</p>
+                    <p><strong>Aggression:</strong> ${player.Aggression}</p>
+                    <p><strong>Interceptions:</strong> ${player.Interceptions}</p>
+                    <p><strong>Positioning:</strong> ${player.Positioning}</p>
+                    <p><strong>Vision:</strong> ${player.Vision}</p>
+                    <p><strong>Penalties:</strong> ${player.Penalties}</p>
+                    <p><strong>Composure:</strong> ${player.Composure}</p>
+                    <p><strong>Marking:</strong> ${player.Marking}</p>
+                    <p><strong>Standing Tackle:</strong> ${player['Standing Tackle']}</p>
+                    <p><strong>Sliding Tackle:</strong> ${player['Sliding Tackle']}</p>
+                    <p><strong>GK Diving:</strong> ${player['GK Diving']}</p>
+                    <p><strong>GK Handling:</strong> ${player['GK Handling']}</p>
+                    <p><strong>GK Kicking:</strong> ${player['GK Kicking']}</p>
+                    <p><strong>GK Positioning:</strong> ${player['GK Positioning']}</p>
+                    <p><strong>GK Reflexes:</strong> ${player['GK Reflexes']}</p>
+                    <p><strong>ST Rating:</strong> ${player['ST Rating']}</p>
+                    <p><strong>LW Rating:</strong> ${player['LW Rating']}</p>
+                    <p><strong>LF Rating:</strong> ${player['LF Rating']}</p>
+                    <p><strong>CF Rating:</strong> ${player['CF Rating']}</p>
+                    <p><strong>RF Rating:</strong> ${player['RF Rating']}</p>
+                    <p><strong>RW Rating:</strong> ${player['RW Rating']}</p>
+                    <p><strong>CAM Rating:</strong> ${player['CAM Rating']}</p>
+                    <p><strong>LM Rating:</strong> ${player['LM Rating']}</p>
+                    <p><strong>CM Rating:</strong> ${player['CM Rating']}</p>
+                    <p><strong>RM Rating:</strong> ${player['RM Rating']}</p>
+                    <p><strong>LAM Rating:</strong> ${player['LAM Rating']}</p>
+                    <p><strong>RAM Rating:</strong> ${player['RAM Rating']}</p>
+                    <p><strong>CDM Rating:</strong> ${player['CDM Rating']}</p>
+                    <p><strong>LDM Rating:</strong> ${player['LDM Rating']}</p>
+                    <p><strong>RDM Rating:</strong> ${player['RDM Rating']}</p>
+                    <p><strong>CB Rating:</strong> ${player['CB Rating']}</p>
+                    <p><strong>LB Rating:</strong> ${player['LB Rating']}</p>
+                    <p><strong>RB Rating:</strong> ${player['RB Rating']}</p>
+                    <p><strong>LWB Rating:</strong> ${player['LWB Rating']}</p>
+                    <p><strong>RWB Rating:</strong> ${player['RWB Rating']}</p>
+                    <p><strong>GK Rating:</strong> ${player['GK Rating']}</p>
+                    <p><strong>LWB Rating:</strong> ${player['LWB Rating']}</p>
+                    <p><strong>RWB Rating:</strong> ${player['RWB Rating']}</p>
+                    <p><strong>GK Rating:</strong> ${player['GK Rating']}</p>
+                    <p><strong>Total Stats:</strong> ${player['Total Stats']}</p>
+                    <p><strong>Base Stats:</strong> ${player['Base Stats']}</p>
+                    <p><strong>W/F:</strong> ${player['W/F']}</p>
+                    <p><strong>SM:</strong> ${player.SM}</p>
+                    <p><strong>A/W:</strong> ${player['A/W']}</p>
+                    <p><strong>D/W:</strong> ${player['D/W']}</p>
+                    <p><strong>IR:</strong> ${player.IR}</p>
+                    <p><strong>PAC:</strong> ${player.PAC}</p>
+                    <p><strong>SHO:</strong> ${player.SHO}</p>
+                    <p><strong>PAS:</strong> ${player.PAS}</p>
+                    <p><strong>DRI:</strong> ${player.DRI}</p>
+                    <p><strong>DEF:</strong> ${player.DEF}</p>
+                    <p><strong>PHY:</strong> ${player.PHY}</p>
+                    <p><strong>Hits:</strong> ${player.Hits}</p>
+                `;
+                
+                modal.style.display = 'block';
+            }
+        }
+
+        // Edit player
+        function editPlayer(playerName) {
+            if (currentUserRole !== 'admin') {
+                alert('Access Denied: Only administrators can edit players.');
+                return;
+            }
+
+            const player = playerData.find(p => p.name === playerName);
+            if (player) {
+                const form = document.getElementById('playerForm');
+                const formTitle = document.getElementById('playerFormTitle');
+                const submitBtn = document.getElementById('submitBtn');
+                
+                if (!form || !formTitle || !submitBtn) return;
+                
+                formTitle.textContent = 'Edit Player';
+                submitBtn.textContent = 'Update Player';
+                submitBtn.onclick = () => updatePlayer(playerName);
+                
+                // Populate form with player data
+                Object.keys(player).forEach(key => {
+                    const input = form.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        input.value = player[key];
+                    }
+                });
+                
+                form.style.display = 'block';
+            }
+        }
+
+        // Update player
+        function updatePlayer(playerName) {
+            if (currentUserRole !== 'admin') {
+                alert('Access Denied: Only administrators can update players.');
+                return;
+            }
+
+            const form = document.getElementById('playerForm');
+            if (!form) return;
+            
+            const updatedPlayer = {};
+            
+            // Collect form data
+            const formData = new FormData(form);
+            formData.forEach((value, key) => {
+                updatedPlayer[key] = value;
+            });
+            
+            // Find and update player
+            const index = playerData.findIndex(p => p.name === playerName);
+            if (index !== -1) {
+                playerData[index] = { ...playerData[index], ...updatedPlayer };
+                displayPlayers();
+                form.style.display = 'none';
+                alert('Player updated successfully!');
+            }
+        }
+
+        // Delete player
+        function deletePlayer(playerName) {
+            if (currentUserRole !== 'admin') {
+                alert('Access Denied: Only administrators can delete players.');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete ${playerName}?`)) {
+                playerData = playerData.filter(p => p.name !== playerName);
+                displayPlayers();
+                alert('Player deleted successfully!');
+            }
+        }
+
+        // Add new player
+        function addNewPlayer() {
+            if (currentUserRole !== 'admin') {
+                alert('Access Denied: Only administrators can add new players.');
+                return;
+            }
+
+            const form = document.getElementById('playerForm');
+            const formTitle = document.getElementById('playerFormTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (!form || !formTitle || !submitBtn) return;
+            
+            formTitle.textContent = 'Add New Player';
+            submitBtn.textContent = 'Add Player';
+            submitBtn.onclick = saveNewPlayer;
+            
+            // Clear form
+            form.reset();
+            form.style.display = 'block';
+        }
+
+        // Save new player
+        function saveNewPlayer() {
+            if (currentUserRole !== 'admin') {
+                alert('Access Denied: Only administrators can add new players.');
+                return;
+            }
+
+            const form = document.getElementById('playerForm');
+            if (!form) return;
+            
+            const newPlayer = {};
+            
+            // Collect form data
+            const formData = new FormData(form);
+            formData.forEach((value, key) => {
+                newPlayer[key] = value;
+            });
+            
+            // Add new player
+            playerData.push(newPlayer);
+            displayPlayers();
+            form.style.display = 'none';
+            alert('Player added successfully!');
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('playerModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Close form
+        function closeForm() {
+            const form = document.getElementById('playerForm');
+            if (form) form.style.display = 'none';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('playerModal');
+            const form = document.getElementById('playerForm');
+            
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+            if (event.target === form) {
+                form.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
+

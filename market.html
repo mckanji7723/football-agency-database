@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Trends - Football Agency Database</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Market Trends Analysis</h1>
+            <p>Analyze player market values, age distributions, and position trends</p>
+        </div>
+
+        <div class="filters">
+            <select id="positionFilter">
+                <option value="">All Positions</option>
+                <option value="ST">Striker</option>
+                <option value="CF">Center Forward</option>
+                <option value="LW">Left Winger</option>
+                <option value="RW">Right Winger</option>
+                <option value="CAM">Attacking Midfielder</option>
+                <option value="CM">Central Midfielder</option>
+                <option value="CDM">Defensive Midfielder</option>
+                <option value="CB">Center Back</option>
+                <option value="LB">Left Back</option>
+                <option value="RB">Right Back</option>
+                <option value="GK">Goalkeeper</option>
+            </select>
+            <select id="ageFilter">
+                <option value="">All Ages</option>
+                <option value="18-21">18-21</option>
+                <option value="22-25">22-25</option>
+                <option value="26-29">26-29</option>
+                <option value="30+">30+</option>
+            </select>
+            <button onclick="updateCharts()">Apply Filters</button>
+        </div>
+
+        <div class="chart-container">
+            <h2>Market Value Distribution by Position</h2>
+            <canvas id="positionValueChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Age vs Market Value Trend</h2>
+            <canvas id="ageValueChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Top 10 Most Valuable Players</h2>
+            <canvas id="topPlayersChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Market Value Distribution by Age Group</h2>
+            <canvas id="ageDistributionChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let playerData = [];
+        let positionValueChart, ageValueChart, topPlayersChart, ageDistributionChart;
+
+        // Initialize charts when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+
+        function loadData() {
+            fetch('og.csv')
+                .then(response => response.text())
+                .then(csv => {
+                    Papa.parse(csv, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            playerData = results.data;
+                            updateCharts();
+                        }
+                    });
+                });
+        }
+
+        function updateCharts() {
+            const positionFilter = document.getElementById('positionFilter').value;
+            const ageFilter = document.getElementById('ageFilter').value;
+            
+            let filteredData = [...playerData];
+            
+            if (positionFilter) {
+                filteredData = filteredData.filter(player => player['Best position'] === positionFilter);
+            }
+            
+            if (ageFilter) {
+                const [minAge, maxAge] = ageFilter.split('-').map(Number);
+                filteredData = filteredData.filter(player => {
+                    const age = parseInt(player.Age);
+                    if (ageFilter === '30+') return age >= 30;
+                    return age >= minAge && age <= maxAge;
+                });
+            }
+
+            updatePositionValueChart(filteredData);
+            updateAgeValueChart(filteredData);
+            updateTopPlayersChart(filteredData);
+            updateAgeDistributionChart(filteredData);
+        }
+
+        function updatePositionValueChart(data) {
+            const positions = [...new Set(data.map(player => player['Best position']))];
+            const avgValues = positions.map(position => {
+                const players = data.filter(p => p['Best position'] === position);
+                const totalValue = players.reduce((sum, p) => sum + parseFloat(p['Value(Euros)']), 0);
+                return totalValue / players.length;
+            });
+
+            if (positionValueChart) {
+                positionValueChart.destroy();
+            }
+
+            const ctx = document.getElementById('positionValueChart').getContext('2d');
+            positionValueChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: positions,
+                    datasets: [{
+                        label: 'Average Market Value (€)',
+                        data: avgValues,
+                        backgroundColor: 'rgba(26, 115, 232, 0.7)',
+                        borderColor: 'rgba(26, 115, 232, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateAgeValueChart(data) {
+            const ageGroups = {};
+            data.forEach(player => {
+                const age = parseInt(player.Age);
+                const ageGroup = Math.floor(age / 5) * 5;
+                if (!ageGroups[ageGroup]) {
+                    ageGroups[ageGroup] = [];
+                }
+                ageGroups[ageGroup].push(parseFloat(player['Value(Euros)']));
+            });
+
+            const ages = Object.keys(ageGroups).sort((a, b) => a - b);
+            const avgValues = ages.map(age => {
+                const values = ageGroups[age];
+                return values.reduce((a, b) => a + b, 0) / values.length;
+            });
+
+            if (ageValueChart) {
+                ageValueChart.destroy();
+            }
+
+            const ctx = document.getElementById('ageValueChart').getContext('2d');
+            ageValueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ages.map(age => `${age}-${parseInt(age) + 4}`),
+                    datasets: [{
+                        label: 'Average Market Value (€)',
+                        data: avgValues,
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTopPlayersChart(data) {
+            const sortedPlayers = [...data]
+                .sort((a, b) => parseFloat(b['Value(Euros)']) - parseFloat(a['Value(Euros)']))
+                .slice(0, 10);
+
+            if (topPlayersChart) {
+                topPlayersChart.destroy();
+            }
+
+            const ctx = document.getElementById('topPlayersChart').getContext('2d');
+            topPlayersChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedPlayers.map(player => player.name),
+                    datasets: [{
+                        label: 'Market Value (€)',
+                        data: sortedPlayers.map(player => parseFloat(player['Value(Euros)'])),
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateAgeDistributionChart(data) {
+            const ageGroups = {
+                '18-21': 0,
+                '22-25': 0,
+                '26-29': 0,
+                '30+': 0
+            };
+
+            data.forEach(player => {
+                const age = parseInt(player.Age);
+                if (age >= 30) ageGroups['30+']++;
+                else if (age >= 26) ageGroups['26-29']++;
+                else if (age >= 22) ageGroups['22-25']++;
+                else if (age >= 18) ageGroups['18-21']++;
+            });
+
+            if (ageDistributionChart) {
+                ageDistributionChart.destroy();
+            }
+
+            const ctx = document.getElementById('ageDistributionChart').getContext('2d');
+            ageDistributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(ageGroups),
+                    datasets: [{
+                        data: Object.values(ageGroups),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

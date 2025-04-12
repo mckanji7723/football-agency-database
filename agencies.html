@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Agencies - Football Agency Database</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .agency-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .tier-section {
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tier-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tier-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .tier-1 .tier-badge {
+            background: #FFD700;
+            color: #000;
+        }
+
+        .tier-2 .tier-badge {
+            background: #C0C0C0;
+            color: #000;
+        }
+
+        .tier-3 .tier-badge {
+            background: #CD7F32;
+            color: #fff;
+        }
+
+        .agency-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .agency-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .agency-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .agency-logo {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .agency-logo.error {
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: #666;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .agency-info {
+            margin-top: 10px;
+        }
+
+        .agency-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .agency-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .notable-clients {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #444;
+        }
+
+        .client-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 5px;
+        }
+
+        .client-list li {
+            margin-bottom: 3px;
+        }
+
+        .website-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #2196F3;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .website-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .agency-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Football Agencies</h1>
+            <p>Leading agencies in player representation and contract negotiations</p>
+        </div>
+
+        <div class="agency-container">
+            <!-- Tier 1 Agencies -->
+            <div class="tier-section tier-1">
+                <div class="tier-header">
+                    <span class="tier-badge">Tier 1</span>
+                    <h2>Elite Agencies</h2>
+                </div>
+                <div class="agency-grid">
+                    <a href="https://www.stellargroup.co.uk" target="_blank" class="agency-card">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/8d/Stellar_Group_logo.svg" 
+                             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5TdGVsbGFyIEdyb3VwPC90ZXh0Pjwvc3ZnPg=='; this.classList.add('error')" 
+                             alt="Stellar Group" class="agency-logo">
+                        <div class="agency-info">
+                            <div class="agency-name">Stellar Group</div>
+                            <div class="agency-details">Founded: 1994 | Headquarters: London, UK</div>
+                            <div class="notable-clients">Notable Clients:</div>
+                            <ul class="client-list">
+                                <li>Gareth Bale</li>
+                                <li>Luke Shaw</li>
+                                <li>Joe Gomez</li>
+                            </ul>
+                            <div class="website-link">Visit Website →</div>
+                        </div>
+                    </a>
+
+                    <a href="https://www.wasserman.com" target="_blank" class="agency-card">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wasserman_logo.svg" 
+                             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5XYXNzZXJtYW48L3RleHQ+PC9zdmc+'; this.classList.add('error')" 
+                             alt="Wasserman" class="agency-logo">
+                        <div class="agency-info">
+                            <div class="agency-name">Wasserman</div>
+                            <div class="agency-details">Founded: 2002 | Headquarters: Los Angeles, USA</div>
+                            <div class="notable-clients">Notable Clients:</div>
+                            <ul class="client-list">
+                                <li>Mohamed Salah</li>
+                                <li>Sadio Mané</li>
+                                <li>Virgil van Dijk</li>
+                            </ul>
+                            <div class="website-link">Visit Website →</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tier 2 Agencies -->
+            <div class="tier-section tier-2">
+                <div class="tier-header">
+                    <span class="tier-badge">Tier 2</span>
+                    <h2>Established Agencies</h2>
+                </div>
+                <div class="agency-grid">
+                    <a href="https://www.basesoccer.com" target="_blank" class="agency-card">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Base_Soccer_logo.svg" 
+                             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5CYXNlIFNvY2NlcjwvdGV4dD48L3N2Zz4='; this.classList.add('error')" 
+                             alt="Base Soccer" class="agency-logo">
+                        <div class="agency-info">
+                            <div class="agency-name">Base Soccer</div>
+                            <div class="agency-details">Founded: 2006 | Headquarters: London, UK</div>
+                            <div class="notable-clients">Notable Clients:</div>
+                            <ul class="client-list">
+                                <li>Harry Kane</li>
+                                <li>Dele Alli</li>
+                                <li>Eric Dier</li>
+                            </ul>
+                            <div class="website-link">Visit Website →</div>
+                        </div>
+                    </a>
+
+                    <a href="https://www.icmstellarsports.com" target="_blank" class="agency-card">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/ICM_Partners_logo.svg" 
+                             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JQ00gU3RlbGxhciBTcG9ydHM8L3RleHQ+PC9zdmc+'; this.classList.add('error')" 
+                             alt="ICM Stellar Sports" class="agency-logo">
+                        <div class="agency-info">
+                            <div class="agency-name">ICM Stellar Sports</div>
+                            <div class="agency-details">Founded: 2018 | Headquarters: London, UK</div>
+                            <div class="notable-clients">Notable Clients:</div>
+                            <ul class="client-list">
+                                <li>Raheem Sterling</li>
+                                <li>John Stones</li>
+                                <li>Kyle Walker</li>
+                            </ul>
+                            <div class="website-link">Visit Website →</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tier 3 Agencies -->
+            <div class="tier-section tier-3">
+                <div class="tier-header">
+                    <span class="tier-badge">Tier 3</span>
+                    <h2>Emerging Agencies</h2>
+                </div>
+                <div class="agency-grid">
+                    <a href="https://www.uniquesportsmanagement.com" target="_blank" class="agency-card">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Unique_Sports_Management_logo.svg" 
+                             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5VbmlxdWUgU3BvcnRzIE1hbmFnZW1lbnQ8L3RleHQ+PC9zdmc+'; this.classList.add('error')" 
+                             alt="Unique Sports Management" class="agency-logo">
+                        <div class="agency-info">
+                            <div class="agency-name">Unique Sports Management</div>
+                            <div class="agency-details">Founded: 2010 | Headquarters: Manchester, UK</div>
+                            <div class="notable-clients">Notable Clients:</div>
+                            <ul class="client-list">
+                                <li>Marcus Rashford</li>
+                                <li>Jesse Lingard</li>
+                                <li>Axel Tuanzebe</li>
+                            </ul>
+                            <div class="website-link">Visit Website →</div>
+                        </div>
+                    </a>
+
+                    <a href="https://www.neweraglobalsports.com" target="_blank" class="agency-card">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/9f/New_Era_Global_Sports_logo.svg" 
+                             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5OZXcgRXJhIEdsb2JhbCBTcG9ydHM8L3RleHQ+PC9zdmc+'; this.classList.add('error')" 
+                             alt="New Era Global Sports" class="agency-logo">
+                        <div class="agency-info">
+                            <div class="agency-name">New Era Global Sports</div>
+                            <div class="agency-details">Founded: 2015 | Headquarters: London, UK</div>
+                            <div class="notable-clients">Notable Clients:</div>
+                            <ul class="client-list">
+                                <li>Tammy Abraham</li>
+                                <li>Fikayo Tomori</li>
+                                <li>Mason Mount</li>
+                            </ul>
+                            <div class="website-link">Visit Website →</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
